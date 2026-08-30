@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joseph Social</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      background: #f3f5f9;
+      color: #172033;
+    }
+    header {
+      height: 65px;
+      background: white;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5%;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2864e8;
+    }
+    .search {
+      width: 35%;
+      padding: 11px 18px;
+      border: 1px solid #ddd;
+      border-radius: 25px;
+      outline: none;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #2864e8;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 25px auto;
+      display: grid;
+      grid-template-columns: 220px 1fr 260px;
+      gap: 20px;
+      padding: 0 15px;
+    }
+    .card {
+      background: white;
+      border-radius: 15px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+    .menu button {
+      width: 100%;
+      border: none;
+      background: none;
+      text-align: left;
+      padding: 13px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 15px;
+      margin-bottom: 5px;
+    }
+    .menu button:hover {
+      background: #eef3ff;
+      color: #2864e8;
+    }
+    .composer textarea {
+      width: 100%;
+      height: 80px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 12px;
+      resize: none;
+      outline: none;
+    }
+    .post-btn {
+      background: #2864e8;
+      color: white;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 20px;
+      margin-top: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .post-user {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .post-text {
+      line-height: 1.5;
+      margin-bottom: 15px;
+      white-space: pre-wrap;
+    }
+    .post-image,
+    .post-video {
+      width: 100%;
+      border-radius: 12px;
+      margin-top: 10px;
+      max-height: 500px;
+      object-fit: cover;
+    }
+    .actions {
+      border-top: 1px solid #eee;
+      padding-top: 12px;
+      display: flex;
+      gap: 25px;
+    }
+    .actions button {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .trend {
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .auth {
+      max-width: 430px;
+      margin: 70px auto;
+      padding: 25px;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.08);
+    }
+    .auth h2 {
+      margin-bottom: 20px;
+    }
+    .auth input {
+      width: 100%;
+      padding: 13px;
+      margin-bottom: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+    }
+    .auth button {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      background: #2864e8;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .switch {
+      text-align: center;
+      margin-top: 15px;
+      cursor: pointer;
+      color: #2864e8;
+    }
+    .hidden {
+      display: none;
+    }
+    .profile-box {
+      text-align: center;
+    }
+    .profile-large {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: #2864e8;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      font-size: 30px;
+      font-weight: bold;
+    }
+    .logout {
+      margin-top: 15px;
+      background: #e53935;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    @media(max-width: 850px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+      .left,
+      .right {
+        display: none;
+      }
+      .search {
+        width: 45%;
+      }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">Joseph Social</div>
+  <input id="searchInput" class="search" type="text"
+         placeholder="Search Joseph Social..." oninput="searchPosts()">
+  <div id="avatar" class="avatar" onclick="showProfile()">J</div>
+</header>
+<div id="authScreen" class="auth hidden">
+  <h2 id="authTitle">Welcome to Joseph Social</h2>
+  <input id="fullName" placeholder="Full name">
+  <input id="email" type="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="handleAuth()" id="authButton">Create Account</button>
+  <div class="switch" onclick="toggleAuth()">
+    Already have an account? Login
+  </div>
+</div>
+<div id="app" class="container">
+  <aside class="left">
+    <div class="card menu">
+      <button onclick="loadPosts()">🏠 Home</button>
+      <button onclick="focusSearch()">🔎 Explore</button>
+      <button onclick="showVideos()">🎬 Videos</button>
+      <button onclick="showMessages()">💬 Messages</button>
+      <button onclick="showNotifications()">🔔 Notifications</button>
+      <button onclick="showProfile()">👤 Profile</button>
+      <button onclick="showSettings()">⚙️ Settings</button>
+    </div>
+  </aside>
+  <main>
+    <div class="card composer">
+      <h3>Create a post</h3>
+      <br>
+      <textarea id="postText"
+        placeholder="What's on your mind?"></textarea>
+      <input
+        id="mediaUrl"
+        placeholder="Optional photo/video URL"
+        style="width:100%;padding:11px;margin-top:10px;border:1px solid #ddd;border-radius:10px;"
+      >
+      <button class="post-btn" onclick="createPost()">Post</button>
+    </div>
+    <div id="posts">
+      <div class="card">Loading Joseph Social...</div>
+    </div>
+  </main>
+  <aside class="right">
+    <div class="card">
+      <h3>🔥 Trending</h3>
+      <div class="trend">#JosephSocial</div>
+      <div class="trend">#Technology</div>
+      <div class="trend">#Music</div>
+      <div class="trend">#Zambia</div>
+      <div class="trend">#ForYou</div>
+    </div>
+    <div class="card">
+      <h3>People you may know</h3>
+      <br>
+      <p>👤 Discover new people on Joseph Social.</p>
+    </div>
+  </aside>
+</div>
+<script>
+  /*
+    IMPORTANT:
+    Replace these two values with the same Supabase URL
+    and public/anon key you already placed in Vercel.
+  */
+  const SUPABASE_URL = "YOUR_SUPABASE_URL";
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+  const supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
+  let loginMode = false;
+  let allPosts = [];
+  async function checkUser() {
+    const { data } = await supabaseClient.auth.getSession();
+    if (!data.session) {
+      document.getElementById("authScreen").classList.remove("hidden");
+      document.getElementById("app").classList.add("hidden");
+      return;
+    }
+    document.getElementById("authScreen").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+    await loadProfile();
+    await loadPosts();
+  }
+  function toggleAuth() {
+    loginMode = !loginMode;
+    document.getElementById("fullName").classList.toggle(
+      "hidden",
+      loginMode
+    );
+    document.getElementById("authTitle").innerText =
+      loginMode
+        ? "Login to Joseph Social"
+        : "Create your Joseph Social account";
+    document.getElementById("authButton").innerText =
+      loginMode ? "Login" : "Create Account";
+    document.querySelector(".switch").innerText =
+      loginMode
+        ? "Don't have an account? Create one"
+        : "Already have an account? Login";
+  }
+  async function handleAuth() {
+    const email =
+      document.getElementById("email").value.trim();
+    const password =
+      document.getElementById("password").value;
+    const fullName =
+      document.getElementById("fullName").value.trim();
+    if (!email || !password) {
+      alert("Please enter your email and password.");
+      return;
+    }
+    if (loginMode) {
+      const { error } =
+        await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      await checkUser();
+      return;
+    }
+    if (!fullName) {
+      alert("Please enter your full name.");
+      return;
+    }
+    const { data, error } =
+      await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName
+          }
+        }
+      });
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    if (data.user) {
+      await supabaseClient
+        .from("profiles")
+        .upsert({
+          id: data.user.id,
+          username: email.split("@")[0],
+          full_name: fullName,
+          bio: "",
+          avatar_url: null
+        });
+      alert(
+        "Account created. Check your email if confirmation is required."
+      );
+      await checkUser();
+    }
+  }
+  async function loadProfile() {
+    const {
+      data: { user }
+    } = await supabaseClient.auth.getUser();
+    if (!user) return;
+    const { data } =
+      await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+    if (data) {
+      const letter =
+        (data.full_name || "J")
+          .charAt(0)
+          .toUpperCase();
+      document.getElementById("avatar").innerText = letter;
+    }
+  }
+  async function createPost() {
+    const text =
+      document.getElementById("postText").value.trim();
+    const media =
+      document.getElementById("mediaUrl").value.trim();
+    if (!text && !media) {
+      alert("Write something or add media first.");
+      return;
+    }
+    const {
+      data: { user }
+    } = await supabaseClient.auth.getUser();
+    if (!user) {
+      alert("Please login first.");
+      return;
+    }
+    const { error } =
+      await supabaseClient
+        .from("posts")
+        .insert({
+          user_id: user.id,
+          body: text || "",
+          media_url: media || null,
+          media_type: media
+            ? detectMediaType(media)
+            : null
+        });
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    document.getElementById("postText").value = "";
+    document.getElementById("mediaUrl").value = "";
+    await loadPosts();
+  }
+  function detectMediaType(url) {
+    const lower = url.toLowerCase();
+    if (
+      lower.includes(".mp4") ||
+      lower.includes(".mov") ||
+      lower.includes(".webm")
+    ) {
+      return "video";
+    }
+    return "image";
+  }
+  async function loadPosts() {
+    const { data, error } =
+      await supabaseClient
+        .from("posts")
+        .select(`
+          id,
+          user_id,
+          body,
+          media_url,
+          media_type,
+          created_at,
+          profiles (
+            full_name,
+            avatar_url
+          )
+        `)
+        .order("created_at", {
+          ascending: false
+        });
+    if (error) {
+      document.getElementById("posts").innerHTML =
+        `<div class="card">Unable to load posts: ${error.message}</div>`;
+      return;
+    }
+    allPosts = data || [];
+    renderPosts(allPosts);
+  }
+  function renderPosts(posts) {
+    const container =
+      document.getElementById("posts");
+    if (!posts.length) {
+      container.innerHTML =
+        `<div class="card">No posts yet. Be the first to post! 🚀</div>`;
+      return;
+    }
+    container.innerHTML = posts.map(post => {
+      const name =
+        post.profiles?.full_name || "Joseph Social user";
+      let media = "";
+      if (post.media_url) {
+        if (post.media_type === "video") {
+          media =
+            `<video class="post-video" src="${escapeHtml(post.media_url)}" controls></video>`;
+        } else {
+          media =
+            `<img class="post-image" src="${escapeHtml(post.media_url)}" alt="Post media">`;
+        }
+      }
+      return `
+        <div class="card post">
+          <div class="post-user">👤 ${escapeHtml(name)}</div>
+          <div class="post-text">
+            ${escapeHtml(post.body || "")}
+          </div>
+          ${media}
+          <div class="actions">
+            <button onclick="likePost('${post.id}', this)">
+              ❤️ Like
+            </button>
+            <button onclick="commentPost('${post.id}')">
+              💬 Comment
+            </button>
+            <button onclick="sharePost('${post.id}')">
+              ↗️ Share
+            </button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+  async function likePost(postId, button) {
+    const {
+      data: { user }
+    } = await supabaseClient.auth.getUser();
+    if (!user) {
+      alert("Please login first.");
+      return;
+    }
+    const { data: existing } =
+      await supabaseClient
+        .from("likes")
+        .select("id")
+        .eq("post_id", postId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+    if (existing) {
+      await supabaseClient
+        .from("likes")
+        .delete()
+        .eq("id", existing.id);
+      button.innerText = "❤️ Like";
+    } else {
+      await supabaseClient
+        .from("likes")
+        .insert({
+          post_id: postId,
+          user_id: user.id
+        });
+      button.innerText = "💙 Liked";
+    }
+  }
+  async function commentPost(postId) {
+    const comment =
+      prompt("Write your comment:");
+    if (!comment || !comment.trim()) return;
+    const {
+      data: { user }
+    } = await supabaseClient.auth.getUser();
+    if (!user) {
+      alert("Please login first.");
+      return;
+    }
+    const { error } =
+      await supabaseClient
+        .from("comments")
+        .insert({
+          post_id: postId,
+          user_id: user.id,
+          content: comment.trim()
+        });
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    alert("Comment added! 💬");
+  }
+  function sharePost(postId) {
+    const url =
+      window.location.origin +
+      window.location.pathname +
+      "?post=" +
+      postId;
+    if (navigator.share) {
+      navigator.share({
+        title: "Joseph Social",
+        text: "Check out this post on Joseph Social!",
+        url
+      });
+    } else {
+      navigator.clipboard.writeText(url);
+      alert("Post link copied!");
+    }
+  }
+  function searchPosts() {
+    const query =
+      document
+        .getElementById("searchInput")
+        .value
+        .toLowerCase()
+        .trim();
+    if (!query) {
+      renderPosts(allPosts);
+      return;
+    }
+    const results =
+      allPosts.filter(post =>
+        (post.body || "")
+          .toLowerCase()
+          .includes(query) ||
+        (post.profiles?.full_name || "")
+          .toLowerCase()
+          .includes(query)
+      );
+    renderPosts(results);
+  }
+  function focusSearch() {
+    document.getElementById("searchInput").focus();
+  }
+  async function showProfile() {
+    const {
+      data: { user }
+    } = await supabaseClient.auth.getUser();
+    if (!user) {
+      alert("Please login or create an account.");
+      return;
+    }
+    const { data } =
+      await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+    if (!data) return;
+    const newName =
+      prompt("Full name:", data.full_name);
+    if (newName === null) return;
+    const newBio =
+      prompt("Bio:", data.bio || "");
+    if (newBio === null) return;
+    const { error } =
+      await supabaseClient
+        .from("profiles")
+        .update({
+          full_name: newName.trim(),
+          bio: newBio.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", user.id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await loadProfile();
+    alert("Profile updated! 👤");
+  }
+  function showVideos() {
+    alert("🎬 TikTok-style video feed is the next module.");
+  }
+  function showMessages() {
+    alert("💬 Messenger is the next module.");
+  }
+  function showNotifications() {
+    alert("🔔 Notifications are ready for the next module.");
+  }
+  function showSettings() {
+    alert("⚙️ Settings will be added with the account system.");
+  }
+  async function logout() {
+    await supabaseClient.auth.signOut();
+    location.reload();
+  }
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+  checkUser();
+</script>
+</body>
+</html>
