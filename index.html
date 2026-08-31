@@ -668,7 +668,11 @@
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
   }
-  checkUser();
+  checkUser().catch(error => {
+  console.error(error);
+  document.getElementById("posts").innerHTML =
+    '<div class="card">Unable to connect to Joseph Social. Please refresh.</div>';
+});
 </script>
 </body>
 </html>
