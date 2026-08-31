@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Joseph Social</title>
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <style>
-  
     * {
       box-sizing: border-box;
       margin: 0;
@@ -171,10 +171,7 @@
       color: #2864e8;
     }
     .hidden {
-      display: none;
-    }
-    .profile-box {
-      text-align: center;
+      display: none !important;
     }
     .profile-large {
       width: 90px;
@@ -215,47 +212,112 @@
 <body>
 <header>
   <div class="logo">Joseph Social</div>
-  <input id="searchInput" class="search" type="text"
-         placeholder="Search Joseph Social..." oninput="searchPosts()">
+  <input
+    id="searchInput"
+    class="search"
+    type="text"
+    placeholder="Search Joseph Social..."
+    oninput="searchPosts()"
+  >
   <div id="avatar" class="avatar" onclick="showProfile()">J</div>
 </header>
-<div id="authScreen" class="auth hidden">
-  <h2 id="authTitle">Welcome to Joseph Social</h2>
-  <input id="fullName" placeholder="Full name">
-  <input id="email" type="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="handleAuth()" id="authButton">Create Account</button>
-  <div class="switch" onclick="toggleAuth()">
+<!-- LOGIN / REGISTER -->
+<div id="authScreen" class="auth">
+  <h2 id="authTitle">Create your Joseph Social account</h2>
+  <input
+    id="fullName"
+    placeholder="Full name"
+  >
+  <input
+    id="phone"
+    placeholder="Phone number"
+  >
+  <input
+    id="email"
+    type="email"
+    placeholder="Email"
+  >
+  <input
+    id="password"
+    type="password"
+    placeholder="Password"
+  >
+  <button
+    onclick="handleAuth()"
+    id="authButton"
+  >
+    Create Account
+  </button>
+  <div
+    class="switch"
+    onclick="toggleAuth()"
+    id="switchText"
+  >
     Already have an account? Login
   </div>
 </div>
-<div id="app" class="container">
+<!-- MAIN APP -->
+<div id="app" class="container hidden">
   <aside class="left">
     <div class="card menu">
-      <button onclick="loadPosts()">🏠 Home</button>
-      <button onclick="focusSearch()">🔎 Explore</button>
-      <button onclick="showVideos()">🎬 Videos</button>
-      <button onclick="showMessages()">💬 Messages</button>
-      <button onclick="showNotifications()">🔔 Notifications</button>
-      <button onclick="showProfile()">👤 Profile</button>
-      <button onclick="showSettings()">⚙️ Settings</button>
+      <button onclick="loadPosts()">
+        🏠 Home
+      </button>
+      <button onclick="focusSearch()">
+        🔎 Explore
+      </button>
+      <button onclick="showVideos()">
+        🎬 Videos
+      </button>
+      <button onclick="showMessages()">
+        💬 Messages
+      </button>
+      <button onclick="showNotifications()">
+        🔔 Notifications
+      </button>
+      <button onclick="showProfile()">
+        👤 Profile
+      </button>
+      <button onclick="showSettings()">
+        ⚙️ Settings
+      </button>
+      <button onclick="logout()">
+        🚪 Logout
+      </button>
     </div>
   </aside>
   <main>
+    <!-- CREATE POST -->
     <div class="card composer">
       <h3>Create a post</h3>
       <br>
-      <textarea id="postText"
-        placeholder="What's on your mind?"></textarea>
+      <textarea
+        id="postText"
+        placeholder="What's on your mind?"
+      ></textarea>
       <input
         id="mediaUrl"
         placeholder="Optional photo/video URL"
-        style="width:100%;padding:11px;margin-top:10px;border:1px solid #ddd;border-radius:10px;"
+        style="
+          width:100%;
+          padding:11px;
+          margin-top:10px;
+          border:1px solid #ddd;
+          border-radius:10px;
+        "
       >
-      <button class="post-btn" onclick="createPost()">Post</button>
+      <button
+        class="post-btn"
+        onclick="createPost()"
+      >
+        Post
+      </button>
     </div>
+    <!-- POSTS -->
     <div id="posts">
-      <div class="card">Loading Joseph Social...</div>
+      <div class="card">
+        Loading Joseph Social...
+      </div>
     </div>
   </main>
   <aside class="right">
@@ -270,68 +332,121 @@
     <div class="card">
       <h3>People you may know</h3>
       <br>
-      <p>👤 Discover new people on Joseph Social.</p>
+      <p>
+        👤 Discover new people on Joseph Social.
+      </p>
     </div>
   </aside>
 </div>
 <script>
-  /*
-    IMPORTANT:
-    Replace these two values with the same Supabase URL
-    and public/anon key you already placed in Vercel.
-  */const SUPABASE_URL = "https://totlrupzpuavrrdlxetm.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_...";
-
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
   let loginMode = false;
   let allPosts = [];
+  /* =========================
+     CHECK LOGIN
+  ========================= */
   async function checkUser() {
-  try {
-    if (!window.supabaseClient) {
-      throw new Error("Supabase client not found");
+    try {
+      if (typeof supabaseClient === "undefined") {
+        throw new Error("Supabase client is not available.");
+      }
+      const {
+        data,
+        error
+      } = await supabaseClient.auth.getSession();
+      if (error) {
+        throw error;
+      }
+      if (!data.session) {
+        document
+          .getElementById("authScreen")
+          .classList.remove("hidden");
+        document
+          .getElementById("app")
+          .classList.add("hidden");
+        return;
+      }
+      document
+        .getElementById("authScreen")
+        .classList.add("hidden");
+      document
+        .getElementById("app")
+        .classList.remove("hidden");
+      await loadProfile();
+      await loadPosts();
+    } catch (error) {
+      console.error("Joseph Social error:", error);
+      document
+        .getElementById("authScreen")
+        .classList.remove("hidden");
+      document
+        .getElementById("app")
+        .classList.add("hidden");
     }
-
-    const { data, error } = await supabaseClient.auth.getSession();
-
-    if (error) throw error;
-
-    if (!data.session) {
-      document.getElementById("authScreen").classList.remove("hidden");
-      document.getElementById("app").classList.add("hidden");
-      return;
-    }
-
-    document.getElementById("authScreen").classList.add("hidden");
-    document.getElementById("app").classList.remove("hidden");
-
-    await loadProfile();
-    await loadPosts();
-
-  } catch (error) {
-    console.error("Joseph Social error:", error);
-
-    document.getElementById("authScreen").classList.remove("hidden");
-    document.getElementById("app").classList.add("hidden");
   }
+  /* =========================
+     LOGIN / REGISTER SWITCH
+  ========================= */
+  function toggleAuth() {
+    loginMode = !loginMode;
+    document
+      .getElementById("fullName")
+      .classList.toggle("hidden", loginMode);
+    document
+      .getElementById("phone")
+      .classList.toggle("hidden", loginMode);
+    document
+      .getElementById("authTitle")
+      .innerText =
+        loginMode
+          ? "Login to Joseph Social"
+          : "Create your Joseph Social account";
+    document
+      .getElementById("authButton")
+      .innerText =
+        loginMode
+          ? "Login"
+          : "Create Account";
+    document
+      .getElementById("switchText")
+      .innerText =
+        loginMode
+          ? "Don't have an account? Create one"
+          : "Already have an account? Login";
+  }
+  /* =========================
+     LOGIN / REGISTER
+  ========================= */
   async function handleAuth() {
     const email =
-      document.getElementById("email").value.trim();
+      document
+        .getElementById("email")
+        .value
+        .trim();
     const password =
-      document.getElementById("password").value;
+      document
+        .getElementById("password")
+        .value;
     const fullName =
-      document.getElementById("fullName").value.trim();
+      document
+        .getElementById("fullName")
+        .value
+        .trim();
+    const phone =
+      document
+        .getElementById("phone")
+        .value
+        .trim();
     if (!email || !password) {
       alert("Please enter your email and password.");
       return;
     }
     if (loginMode) {
-      const { error } =
+      const {
+        error
+      } =
         await supabaseClient.auth.signInWithPassword({
-          email,
-          password
+          email: email,
+          password: password
         });
       if (error) {
         alert(error.message);
@@ -344,13 +459,17 @@ const supabaseClient = window.supabase.createClient(
       alert("Please enter your full name.");
       return;
     }
-    const { data, error } =
+    const {
+      data,
+      error
+    } =
       await supabaseClient.auth.signUp({
-        email,
-        password,
+        email: email,
+        password: password,
         options: {
           data: {
-            full_name: fullName
+            full_name: fullName,
+            phone: phone
           }
         }
       });
@@ -359,77 +478,137 @@ const supabaseClient = window.supabase.createClient(
       return;
     }
     if (data.user) {
-      await supabaseClient
-        .from("profiles")
-        .upsert({
-          id: data.user.id,
-          username: email.split("@")[0],
-          full_name: fullName,
-          bio: "",
-          avatar_url: null
-        });
-      alert(
-        "Account created. Check your email if confirmation is required."
-      );
-      await checkUser();
+      const {
+        error: profileError
+      } =
+        await supabaseClient
+          .from("profiles")
+          .upsert({
+            id: data.user.id,
+            full_name: fullName,
+            phone: phone,
+            bio: "",
+            avatar_url: null
+          });
+      if (profileError) {
+        console.error(
+          "Profile error:",
+          profileError
+        );
+      }
     }
+    if (!data.session) {
+      alert(
+        "Account created! Please check your email to confirm your account."
+      );
+      return;
+    }
+    await checkUser();
   }
+  /* =========================
+     LOAD PROFILE
+  ========================= */
   async function loadProfile() {
     const {
-      data: { user }
-    } = await supabaseClient.auth.getUser();
+      data: {
+        user
+      }
+    } =
+      await supabaseClient.auth.getUser();
     if (!user) return;
-    const { data } =
+    const {
+      data,
+      error
+    } =
       await supabaseClient
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .maybeSingle();
+    if (error) {
+      console.error(
+        "Profile loading error:",
+        error
+      );
+      return;
+    }
     if (data) {
+      const name =
+        data.full_name || "Joseph Social";
       const letter =
-        (data.full_name || "J")
+        name
           .charAt(0)
           .toUpperCase();
-      document.getElementById("avatar").innerText = letter;
+      document
+        .getElementById("avatar")
+        .innerText = letter;
     }
   }
+  /* =========================
+     CREATE POST
+  ========================= */
   async function createPost() {
     const text =
-      document.getElementById("postText").value.trim();
+      document
+        .getElementById("postText")
+        .value
+        .trim();
     const media =
-      document.getElementById("mediaUrl").value.trim();
+      document
+        .getElementById("mediaUrl")
+        .value
+        .trim();
     if (!text && !media) {
-      alert("Write something or add media first.");
+      alert(
+        "Write something or add media first."
+      );
       return;
     }
     const {
-      data: { user }
-    } = await supabaseClient.auth.getUser();
+      data: {
+        user
+      }
+    } =
+      await supabaseClient.auth.getUser();
     if (!user) {
-      alert("Please login first.");
+      alert(
+        "Please login first."
+      );
       return;
     }
-    const { error } =
+    const {
+      error
+    } =
       await supabaseClient
         .from("posts")
         .insert({
           user_id: user.id,
           body: text || "",
-          media_url: media || null,
-          media_type: media
-            ? detectMediaType(media)
-            : null
+          media_url:
+            media || null,
+          media_type:
+            media
+              ? detectMediaType(media)
+              : null
         });
     if (error) {
       alert(error.message);
       return;
     }
-    document.getElementById("postText").value = "";
-    document.getElementById("mediaUrl").value = "";
+    document
+      .getElementById("postText")
+      .value = "";
+    document
+      .getElementById("mediaUrl")
+      .value = "";
     await loadPosts();
   }
+  /* =========================
+     MEDIA TYPE
+  ========================= */
   function detectMediaType(url) {
-    const lower = url.toLowerCase();
+    const lower =
+      url.toLowerCase();
     if (
       lower.includes(".mp4") ||
       lower.includes(".mov") ||
@@ -439,149 +618,274 @@ const supabaseClient = window.supabase.createClient(
     }
     return "image";
   }
+  /* =========================
+     LOAD POSTS
+  ========================= */
   async function loadPosts() {
-    const { data, error } =
-      await supabaseClient
-        .from("posts")
-        .select(`
-          id,
-          user_id,
-          body,
-          media_url,
-          media_type,
-          created_at,
-          profiles (
-            full_name,
-            avatar_url
-          )
-        `)
-        .order("created_at", {
-          ascending: false
-        });
-    if (error) {
-      document.getElementById("posts").innerHTML =
-        `<div class="card">Unable to load posts: ${error.message}</div>`;
-      return;
+    try {
+      const {
+        data,
+        error
+      } =
+        await supabaseClient
+          .from("posts")
+          .select(`
+            id,
+            user_id,
+            body,
+            media_url,
+            media_type,
+            created_at,
+            profiles (
+              full_name,
+              avatar_url
+            )
+          `)
+          .order(
+            "created_at",
+            {
+              ascending: false
+            }
+          );
+      if (error) {
+        document
+          .getElementById("posts")
+          .innerHTML =
+            `
+              <div class="card">
+                Unable to load posts:<br><br>
+                ${escapeHtml(error.message)}
+              </div>
+            `;
+        console.error(error);
+        return;
+      }
+      allPosts = data || [];
+      renderPosts(allPosts);
+    } catch (error) {
+      console.error(error);
+      document
+        .getElementById("posts")
+        .innerHTML =
+          `
+            <div class="card">
+              Unable to connect to Joseph Social.
+            </div>
+          `;
     }
-    allPosts = data || [];
-    renderPosts(allPosts);
   }
+  /* =========================
+     RENDER POSTS
+  ========================= */
   function renderPosts(posts) {
     const container =
       document.getElementById("posts");
     if (!posts.length) {
       container.innerHTML =
-        `<div class="card">No posts yet. Be the first to post! 🚀</div>`;
+        `
+          <div class="card">
+            No posts yet.
+            Be the first to post! 🚀
+          </div>
+        `;
       return;
     }
-    container.innerHTML = posts.map(post => {
-      const name =
-        post.profiles?.full_name || "Joseph Social user";
-      let media = "";
-      if (post.media_url) {
-        if (post.media_type === "video") {
-          media =
-            `<video class="post-video" src="${escapeHtml(post.media_url)}" controls></video>`;
-        } else {
-          media =
-            `<img class="post-image" src="${escapeHtml(post.media_url)}" alt="Post media">`;
-        }
-      }
-      return `
-        <div class="card post">
-          <div class="post-user">👤 ${escapeHtml(name)}</div>
-          <div class="post-text">
-            ${escapeHtml(post.body || "")}
-          </div>
-          ${media}
-          <div class="actions">
-            <button onclick="likePost('${post.id}', this)">
-              ❤️ Like
-            </button>
-            <button onclick="commentPost('${post.id}')">
-              💬 Comment
-            </button>
-            <button onclick="sharePost('${post.id}')">
-              ↗️ Share
-            </button>
-          </div>
-        </div>
-      `;
-    }).join("");
+    container.innerHTML =
+      posts
+        .map(post => {
+          const name =
+            post.profiles?.full_name ||
+            "Joseph Social user";
+          let media = "";
+          if (post.media_url) {
+            if (
+              post.media_type === "video"
+            ) {
+              media =
+                `
+                  <video
+                    class="post-video"
+                    src="${escapeHtml(post.media_url)}"
+                    controls
+                  ></video>
+                `;
+            } else {
+              media =
+                `
+                  <img
+                    class="post-image"
+                    src="${escapeHtml(post.media_url)}"
+                    alt="Post media"
+                  >
+                `;
+            }
+          }
+          return `
+            <div class="card post">
+              <div class="post-user">
+                👤 ${escapeHtml(name)}
+              </div>
+              <div class="post-text">
+                ${escapeHtml(post.body || "")}
+              </div>
+              ${media}
+              <div class="actions">
+                <button
+                  onclick="likePost('${post.id}', this)"
+                >
+                  ❤️ Like
+                </button>
+                <button
+                  onclick="commentPost('${post.id}')"
+                >
+                  💬 Comment
+                </button>
+                <button
+                  onclick="sharePost('${post.id}')"
+                >
+                  ↗️ Share
+                </button>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
   }
-  async function likePost(postId, button) {
+  /* =========================
+     LIKE
+  ========================= */
+  async function likePost(
+    postId,
+    button
+  ) {
     const {
-      data: { user }
-    } = await supabaseClient.auth.getUser();
+      data: {
+        user
+      }
+    } =
+      await supabaseClient.auth.getUser();
     if (!user) {
-      alert("Please login first.");
+      alert(
+        "Please login first."
+      );
       return;
     }
-    const { data: existing } =
+    const {
+      data: existing
+    } =
       await supabaseClient
         .from("likes")
         .select("id")
-        .eq("post_id", postId)
-        .eq("user_id", user.id)
+        .eq(
+          "post_id",
+          postId
+        )
+        .eq(
+          "user_id",
+          user.id
+        )
         .maybeSingle();
     if (existing) {
       await supabaseClient
         .from("likes")
         .delete()
-        .eq("id", existing.id);
-      button.innerText = "❤️ Like";
+        .eq(
+          "id",
+          existing.id
+        );
+      button.innerText =
+        "❤️ Like";
     } else {
-      await supabaseClient
-        .from("likes")
-        .insert({
-          post_id: postId,
-          user_id: user.id
-        });
-      button.innerText = "💙 Liked";
+      const {
+        error
+      } =
+        await supabaseClient
+          .from("likes")
+          .insert({
+            post_id: postId,
+            user_id: user.id
+          });
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      button.innerText =
+        "💙 Liked";
     }
   }
+  /* =========================
+     COMMENT
+  ========================= */
   async function commentPost(postId) {
     const comment =
-      prompt("Write your comment:");
-    if (!comment || !comment.trim()) return;
+      prompt(
+        "Write your comment:"
+      );
+    if (
+      !comment ||
+      !comment.trim()
+    ) return;
     const {
-      data: { user }
-    } = await supabaseClient.auth.getUser();
+      data: {
+        user
+      }
+    } =
+      await supabaseClient.auth.getUser();
     if (!user) {
-      alert("Please login first.");
+      alert(
+        "Please login first."
+      );
       return;
     }
-    const { error } =
+    const {
+      error
+    } =
       await supabaseClient
         .from("comments")
         .insert({
           post_id: postId,
           user_id: user.id,
-          content: comment.trim()
+          content:
+            comment.trim()
         });
     if (error) {
       alert(error.message);
       return;
     }
-    alert("Comment added! 💬");
+    alert(
+      "Comment added! 💬"
+    );
   }
+  /* =========================
+     SHARE
+  ========================= */
   function sharePost(postId) {
     const url =
       window.location.origin +
       window.location.pathname +
       "?post=" +
       postId;
-    if (navigator.share) {
+    if (
+      navigator.share
+    ) {
       navigator.share({
-        title: "Joseph Social",
-        text: "Check out this post on Joseph Social!",
-        url
+        title:
+          "Joseph Social",
+        text:
+          "Check out this post on Joseph Social!",
+        url: url
       });
     } else {
-      navigator.clipboard.writeText(url);
-      alert("Post link copied!");
+      navigator.clipboard
+        .writeText(url);
+      alert(
+        "Post link copied!"
+      );
     }
   }
+  /* =========================
+     SEARCH
+  ========================= */
   function searchPosts() {
     const query =
       document
@@ -594,85 +898,183 @@ const supabaseClient = window.supabase.createClient(
       return;
     }
     const results =
-      allPosts.filter(post =>
-        (post.body || "")
-          .toLowerCase()
-          .includes(query) ||
-        (post.profiles?.full_name || "")
-          .toLowerCase()
-          .includes(query)
+      allPosts.filter(
+        post =>
+          (post.body || "")
+            .toLowerCase()
+            .includes(query)
+          ||
+          (
+            post.profiles?.full_name ||
+            ""
+          )
+            .toLowerCase()
+            .includes(query)
       );
     renderPosts(results);
   }
   function focusSearch() {
-    document.getElementById("searchInput").focus();
+    document
+      .getElementById("searchInput")
+      .focus();
   }
+  /* =========================
+     PROFILE
+  ========================= */
   async function showProfile() {
     const {
-      data: { user }
-    } = await supabaseClient.auth.getUser();
+      data: {
+        user
+      }
+    } =
+      await supabaseClient.auth.getUser();
     if (!user) {
-      alert("Please login or create an account.");
+      alert(
+        "Please login or create an account."
+      );
       return;
     }
-    const { data } =
+    const {
+      data,
+      error
+    } =
       await supabaseClient
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq(
+          "id",
+          user.id
+        )
         .maybeSingle();
-    if (!data) return;
-    const newName =
-      prompt("Full name:", data.full_name);
-    if (newName === null) return;
-    const newBio =
-      prompt("Bio:", data.bio || "");
-    if (newBio === null) return;
-    const { error } =
-      await supabaseClient
-        .from("profiles")
-        .update({
-          full_name: newName.trim(),
-          bio: newBio.trim(),
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", user.id);
     if (error) {
       alert(error.message);
       return;
     }
+    if (!data) {
+      alert(
+        "Profile not found."
+      );
+      return;
+    }
+    const newName =
+      prompt(
+        "Full name:",
+        data.full_name || ""
+      );
+    if (
+      newName === null
+    ) return;
+    const newPhone =
+      prompt(
+        "Phone:",
+        data.phone || ""
+      );
+    if (
+      newPhone === null
+    ) return;
+    const newBio =
+      prompt(
+        "Bio:",
+        data.bio || ""
+      );
+    if (
+      newBio === null
+    ) return;
+    const {
+      error: updateError
+    } =
+      await supabaseClient
+        .from("profiles")
+        .update({
+          full_name:
+            newName.trim(),
+          phone:
+            newPhone.trim(),
+          bio:
+            newBio.trim()
+        })
+        .eq(
+          "id",
+          user.id
+        );
+    if (updateError) {
+      alert(
+        updateError.message
+      );
+      return;
+    }
     await loadProfile();
-    alert("Profile updated! 👤");
+    alert(
+      "Profile updated! 👤"
+    );
   }
+  /* =========================
+     OTHER SECTIONS
+  ========================= */
   function showVideos() {
-    alert("🎬 TikTok-style video feed is the next module.");
+    alert(
+      "🎬 TikTok-style videos are coming next."
+    );
   }
   function showMessages() {
-    alert("💬 Messenger is the next module.");
+    alert(
+      "💬 Messenger is coming next."
+    );
   }
   function showNotifications() {
-    alert("🔔 Notifications are ready for the next module.");
+    alert(
+      "🔔 Notifications are coming next."
+    );
   }
   function showSettings() {
-    alert("⚙️ Settings will be added with the account system.");
+    alert(
+      "⚙️ Settings are coming next."
+    );
   }
+  /* =========================
+     LOGOUT
+  ========================= */
   async function logout() {
-    await supabaseClient.auth.signOut();
+    await supabaseClient
+      .auth
+      .signOut();
     location.reload();
   }
+  /* =========================
+     SECURITY
+  ========================= */
   function escapeHtml(value) {
     return String(value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+      .replaceAll(
+        "&",
+        "&amp;"
+      )
+      .replaceAll(
+        "<",
+        "&lt;"
+      )
+      .replaceAll(
+        ">",
+        "&gt;"
+      )
+      .replaceAll(
+        '"',
+        "&quot;"
+      )
+      .replaceAll(
+        "'",
+        "&#039;"
+      );
   }
-  checkUser().catch(error => {
-  console.error(error);
-  document.getElementById("posts").innerHTML =
-    '<div class="card">Unable to connect to Joseph Social. Please refresh.</div>';
-});
+  /* =========================
+     START APP
+  ========================= */
+  window.addEventListener(
+    "DOMContentLoaded",
+    () => {
+      checkUser();
+    }
+  );
 </script>
 </body>
 </html>
