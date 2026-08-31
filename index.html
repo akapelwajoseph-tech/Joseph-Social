@@ -289,33 +289,32 @@ const supabaseClient = window.supabase.createClient(
   let loginMode = false;
   let allPosts = [];
   async function checkUser() {
-    const { data } = await supabaseClient.auth.getSession();
+  try {
+    if (!window.supabaseClient) {
+      throw new Error("Supabase client not found");
+    }
+
+    const { data, error } = await supabaseClient.auth.getSession();
+
+    if (error) throw error;
+
     if (!data.session) {
       document.getElementById("authScreen").classList.remove("hidden");
       document.getElementById("app").classList.add("hidden");
       return;
     }
+
     document.getElementById("authScreen").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
+
     await loadProfile();
     await loadPosts();
-  }
-  function toggleAuth() {
-    loginMode = !loginMode;
-    document.getElementById("fullName").classList.toggle(
-      "hidden",
-      loginMode
-    );
-    document.getElementById("authTitle").innerText =
-      loginMode
-        ? "Login to Joseph Social"
-        : "Create your Joseph Social account";
-    document.getElementById("authButton").innerText =
-      loginMode ? "Login" : "Create Account";
-    document.querySelector(".switch").innerText =
-      loginMode
-        ? "Don't have an account? Create one"
-        : "Already have an account? Login";
+
+  } catch (error) {
+    console.error("Joseph Social error:", error);
+
+    document.getElementById("authScreen").classList.remove("hidden");
+    document.getElementById("app").classList.add("hidden");
   }
   async function handleAuth() {
     const email =
